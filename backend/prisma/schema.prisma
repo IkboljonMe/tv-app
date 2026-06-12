@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Hotel {
+  id               String   @id @default(uuid())
+  name             String   @db.VarChar(255)
+  city             String   @db.VarChar(100)
+  countryCode      String   @map("country_code") @db.Char(2)
+  timezone         String   @db.VarChar(60)
+  defaultLanguage  String   @default("en") @map("default_language") @db.VarChar(10)
+  logoUrl          String?  @map("logo_url")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  rooms    Room[]
+  services HotelService[]
+  content  HotelContent[]
+
+  @@map("hotels")
+}
+
+model Room {
+  id          String     @id @default(uuid())
+  hotelId     String     @map("hotel_id")
+  roomNumber  String     @map("room_number") @db.VarChar(20)
+  floor       Int?       @db.SmallInt
+  deviceToken String     @unique @map("device_token") @db.VarChar(64)
+  deviceType  DeviceType @map("device_type")
+  backgroundUrl String?  @map("background_url")
+  lastSeenAt  DateTime?  @map("last_seen_at")
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  hotel  Hotel       @relation(fields: [hotelId], references: [id])
+  guests RoomGuest[]
+
+  @@unique([hotelId, roomNumber])
+  @@map("rooms")
+}
+
+model RoomGuest {
+  id                   String   @id @default(uuid())
+  roomId               String   @map("room_id")
+  exelyReservationId   String   @map("exely_reservation_id") @db.VarChar(64)
+  guestFirstName       String   @map("guest_first_name") @db.VarChar(100)
+  guestLastName        String   @map("guest_last_name") @db.VarChar(100)
+  guestLanguage        String   @default("en") @map("guest_language") @db.VarChar(10)
+  checkIn              DateTime @map("check_in") @db.Date
+  checkOut             DateTime @map("check_out") @db.Date
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  room Room @relation(fields: [roomId], references: [id])
+
+  @@map("room_guests")
+}
+
+model HotelService {
+  id         String   @id @default(uuid())
+  hotelId    String   @map("hotel_id")
+  label      Json
+  iconUrl    String?  @map("icon_url")
+  sortOrder  Int      @default(0) @map("sort_order") @db.SmallInt
+  available  Boolean  @default(true)
+  deepLink   String?  @map("deep_link")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  hotel Hotel @relation(fields: [hotelId], references: [id])
+
+  @@map("hotel_services")
+}
+
+model HotelContent {
+  id           String      @id @default(uuid())
+  hotelId      String      @map("hotel_id")
+  contentType  ContentType @map("content_type")
+  title        Json?
+  body         Json?
+  mediaUrl     String?     @map("media_url")
+  active       Boolean     @default(true)
+  displayFrom  DateTime?   @map("display_from")
+  displayUntil DateTime?   @map("display_until")
+  priority     String?     @default("info") @db.VarChar(20)
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  hotel Hotel @relation(fields: [hotelId], references: [id])
+
+  @@map("hotel_content")
+}
+
+model WeatherCache {
+  cityKey   String   @id @map("city_key") @db.VarChar(100)
+  data      Json
+  fetchedAt DateTime @map("fetched_at")
+
+  @@map("weather_cache")
+}
+
+enum DeviceType {
+  android_tv
+  tizen
+
+  @@map("device_type")
+}
+
+enum ContentType {
+  background
+  announcement
+  menu_item
+  promo
+
+  @@map("content_type")
+}

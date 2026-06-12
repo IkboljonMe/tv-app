@@ -1,45 +1,36 @@
-Android TV Samples Repository
-=============================
+# Hotel TV App
 
-This repository contains a set of individual Android TV projects to help you get started writing Android TV apps.
+Custom hotel room TV launcher for **Android TV** and **Samsung Tizen**, built with Flutter.
 
-- AccessibilityDemo: A Java sample showing how to support accessibility on TVs
-- ClassicsKotlin: A modern Android TV app using Kotlin to show classic videos
-- TvMaterialCatalog: A jetpack-compose app built using Kotlin that demonstrates the usages of components from [Compose for TV libraries](https://developer.android.com/jetpack/androidx/releases/tv) in isolation.
-- JetStreamCompose: A jetpack-compose app using Kotlin that demonstrates the usage of components from the [Compose for TV libraries](https://developer.android.com/jetpack/androidx/releases/tv)
-- Leanback: A Java app that demonstrates a basic Android TV app
-- Leanback Showcase: A Java app that demonstrates many different parts of the Leanback SDK and how to customize them
-- ReferenceAppKotlin: Our newest sample that demonstrates a variety of Android TV and Google TV integrations in Kotlin
+Integrates with Exely PMS for automated check-in/check-out personalization.
 
-## Getting Started
+## Projects
 
-- Clone this repo:
+| Folder | Description |
+|--------|-------------|
+| `android/` | Flutter app — builds for Android TV (APK) and Tizen (TPK) |
+| `backend/` | Node.js + Fastify + Prisma REST/WebSocket API |
+| `tizen/` | Legacy HTML5 Tizen web app (superseded by Flutter) |
 
-```sh
-git clone https://github.com/android/tv-samples.git
+## Quick start
+
+### Backend
+```bash
+cd backend
+cp .env.example .env   # fill in secrets
+npm install
+npx prisma migrate dev --name init
+npm run dev
 ```
 
-- Open the specific project(s) you're interested in within [Android Studio][studio]
+### Android TV
+```bash
+cd android
+flutter run
+```
 
-Need more information about getting started with Android TV? Check the [official getting started guide][getting-started].
-
-## Additional Resouroces
-
-- [Android TV Introduction](http://www.android.com/tv/)
-- [Android TV Developer Documentation](http://developer.android.com/tv)
-- [Android TV Apps in Google Play Store][store-apps]
-
-## Support
-
-If you need additional help, our community might be able to help.
-
-- Stack Overflow: [http://stackoverflow.com/questions/tagged/android-tv](http://stackoverflow.com/questions/tagged/android-tv)
-
-## License
-
-See the [LICENSE file][license] for details.
-
-[studio]: https://developer.android.com/tools/studio/index.html
-[getting-started]: https://developer.android.com/training/tv/start/start.html
-[store-apps]: https://play.google.com/store/apps/collection/promotion_3000e26_androidtv_apps_all
-[license]: LICENSE
+### Tizen
+```bash
+cd android
+flutter-tizen run --dart-define=IS_TIZEN=true
+```
