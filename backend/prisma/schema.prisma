@@ -181,6 +181,7 @@ model MenuHotel {
   roomsPerFloor Int        @default(0)
   active        Boolean    @default(true)
   rooms         MenuRoom[]
+  guests        MenuGuest[]
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
@@ -233,4 +234,20 @@ model OrderItem {
 
   @@index([orderId])
   @@map("menu_order_items")
+}
+
+// In-room guest stay. The TV reads this by hotel slug + room number to
+// personalize the welcome screen (name) while the guest is checked in.
+model MenuGuest {
+  id          String   @id @default(cuid())
+  hotelId     String
+  hotel       MenuHotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  roomNumber  String
+  fullName    String
+  checkIn     DateTime  @default(now())
+  checkOut    DateTime
+  createdAt   DateTime  @default(now())
+
+  @@index([hotelId, roomNumber])
+  @@map("menu_guests")
 }

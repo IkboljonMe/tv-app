@@ -104,6 +104,75 @@ export async function menuApiRoutes(server: FastifyInstance) {
     );
   });
 
+  /* ── GET /menu/guest?hotelSlug=&roomNumber= ───────────────────────────
+     Returns the currently checked-in guest for a room (checkIn <= now <=
+     checkOut), or an empty name if none. The TV uses this for the welcome. */
+  server.get('/menu/guest', async (req, reply) => {
+    const q = req.query as { hotelSlug?: string; roomNumber?: string };
+    if (!q.hotelSlug || !q.roomNumber) {
+      return err(reply, 'hotelSlug and roomNumber are required', 422);
+    }
+    const hotel = await prisma.menuHotel.findUnique({ where: { slug: q.hotelSlug } });
+    if (!hotel) return ok(reply, { fullName: '', hasGuest: false });
+
+    const now = new Date();
+    const guest = await prisma.menuGuest.findFirst({
+      where: {
+        hotelId: hotel.id,
+        roomNumber: q.roomNumber,
+        checkIn: { lte: now },
+        checkOut: { gte: now },
+      },
+      orderBy: { checkIn: 'desc' },
+    });
+    return ok(reply, {
+      fullName: guest?.fullName ?? '',
+      hasGuest: !!guest,
+      checkIn: guest?.checkIn?.toISOString() ?? null,
+      checkOut: guest?.checkOut?.toISOString() ?? null,
+    });
+  });
+
+  /* ── POST /menu/guest ─────────────────────────────────────────────────
+     Check a guest into a room for N days (defaults to 1). */
+  const guestBody = z.object({
+    hotelSlug: z.string().min(1),
+    roomNumber: z.string().min(1),
+    fullName: z.string().min(1),
+    days: z.number().int().positive().default(1),
+  });
+  server.post('/menu/guest', async (req, reply) => {
+    const parsed = guestBody.safeParse(req.body);
+    if (!parsed.success) return err(reply, 'Invalid guest payload', 422);
+    const data = parsed.data;
+    const hotel = await prisma.menuHotel.findUnique({ where: { slug: data.hotelSlug } });
+    if (!hotel) return err(reply, 'Hotel not found', 404);
+
+    const checkIn = new Date();
+    const checkOut = new Date(checkIn.getTime() + data.days * 24 * 60 * 60 * 1000);
+    const guest = await prisma.menuGuest.create({
+      data: {
+        hotelId: hotel.id,
+        roomNumber: data.roomNumber,
+        fullName: data.fullName,
+        checkIn,
+        checkOut,
+      },
+    });
+    return ok(
+      reply,
+      {
+        id: guest.id,
+        fullName: guest.fullName,
+        roomNumber: guest.roomNumber,
+        checkIn: guest.checkIn.toISOString(),
+        checkOut: guest.checkOut.toISOString(),
+      },
+      201,
+      'Guest checked in'
+    );
+  });
+
   /* ── POST /menu/orders ────────────────────────────────────────────── */
   const orderBody = z.object({
     hotelSlug: z.string().min(1),
