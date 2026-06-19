@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Orange rounded tile background (brand-600). -->
+    <path
+        android:fillColor="#EA580C"
+        android:pathData="M10,0h28a10,10 0 0,1 10,10v28a10,10 0 0,1 -10,10h-28a10,10 0 0,1 -10,-10v-28a10,10 0 0,1 10,-10z" />
+    <!-- White chef hat. -->
+    <group android:translateX="13" android:translateY="13" android:scaleX="1.1" android:scaleY="1.1">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M6,2C3.79,2 2,3.79 2,6c0,1.48 0.81,2.77 2,3.46V11h12V9.46c1.19,-0.69 2,-1.98 2,-3.46 0,-2.21 -1.79,-4 -4,-4 -0.73,0 -1.41,0.2 -2,0.54C9.41,2.2 8.73,2 8,2 7.27,2 6.59,2.2 6,2.54 6,2.36 6,2.18 6,2zM4,12v3c0,0.55 0.45,1 1,1h8c0.55,0 1,-0.45 1,-1v-3z" />
+    </group>
+</vector>
