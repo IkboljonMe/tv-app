@@ -1,10 +1,17 @@
 # `hotel-menu/` — In-Room Dining Ordering Platform
 
-A standalone **Next.js 14** full-stack application that lets hotel guests order
-food from their room by scanning a QR code, sends those orders live to a kitchen
-POS, and gives managers an admin panel to run it all. It is independent of the
-Hotel TV platform (`android/`, `backend/`, `tizen/`) — its own app, its own
-database, its own server.
+A **Next.js 14** full-stack application that lets hotel guests order food from
+their room by scanning a QR code, sends those orders live to a kitchen POS, and
+gives managers an admin panel to run it all.
+
+> **Data layer update.** This app used to own a private SQLite database. It now
+> **persists through `backend/` (PostgreSQL)** instead: `src/lib/prisma.ts`
+> forwards every `prisma.<model>.<op>(args)` call to the backend's data bridge
+> (`POST /api/v1/menu/data/:model/:op`, set via `MENU_DATA_API_URL`). Because the
+> same Prisma engine runs the query remotely, all route handlers, auth,
+> translation, and SSE are unchanged — only the storage moved. The same DB now
+> also backs the TV app (`my-hotel`) and the Android `kitchen-pos`. See
+> [README.md](./README.md) for the full topology.
 
 ---
 
@@ -53,7 +60,7 @@ update live. Admins manage hotels, the menu, and every order.
 | --- | --- |
 | Framework | Next.js 14.2 (App Router) + React 18 + TypeScript |
 | Styling | Tailwind CSS 3.4 (dark guest/POS theme) |
-| Database | SQLite via Prisma 5.16 (swap to Postgres by editing `schema.prisma`) |
+| Database | **PostgreSQL in `backend/`** via a Prisma-over-HTTP data bridge (was local SQLite) |
 | Realtime | Server-Sent Events (in-process pub/sub) |
 | Admin data | TanStack React Query 5 |
 | Auth | HMAC-signed cookie (Web Crypto), password per role |
@@ -75,9 +82,11 @@ Guest (mobile)                 Kitchen (tablet)            Manager (desktop)
    ┌──────────────────────────  Next.js route handlers  ──────────────────────┐
    │ /api/orders /api/products /api/categories /api/hotels /api/rooms          │
    │ /api/auth   /api/fx        publishOrderEvent ─► /api/orders/stream (SSE)   │
-   └────────────────────────────────  Prisma  ────────────────────────────────┘
-                                     │
-                                  SQLite (dev.db)
+   └──────────────────  src/lib/prisma.ts (remote bridge)  ────────────────────┘
+                                     │ HTTP: POST /api/v1/menu/data/:model/:op
+                                     ▼
+                       backend/ (:3000) ─► PostgreSQL  (shared with my-hotel TV
+                                                        and kitchen-pos)
 ```
 
 The SSE event bus (`src/lib/events.ts`) is an in-process pub/sub — single
