@@ -1,31 +1,19 @@
+# ── Node (all apps: backend, admin, hotel-menu, …) ────────────────────────────
+node_modules/
+dist/
+.next/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Env / secrets ─────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
 # ── Backend ───────────────────────────────────────────────────────────────────
-backend/node_modules/
-backend/dist/
-backend/.env
 backend/prisma/migrations/
-
-# ── Flutter / Android ─────────────────────────────────────────────────────────
-android/.dart_tool/
-android/build/
-android/.flutter-plugins
-android/.flutter-plugins-dependencies
-android/.packages
-android/pubspec.lock
-android/android/app/debug/
-android/android/app/release/
-android/android/app/profile/
-android/android/local.properties
-android/android/.gradle/
-android/ios/
-android/linux/
-android/macos/
-android/web/
-android/windows/
-
-# ── Tizen build output ────────────────────────────────────────────────────────
-android/tizen/.buildResult/
-*.wgt
-*.tpk
 
 # ── OS / IDE ──────────────────────────────────────────────────────────────────
 .DS_Store
