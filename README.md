@@ -1,6 +1,6 @@
 # Hotel TV App
 
-Custom hotel room TV launcher for **Android TV** and **Samsung Tizen**, built with Flutter.
+Custom hotel room TV launcher for **Android TV**, built natively with Kotlin + Jetpack Compose.
 
 Integrates with Exely PMS for automated check-in/check-out personalization.
 
@@ -8,9 +8,10 @@ Integrates with Exely PMS for automated check-in/check-out personalization.
 
 | Folder | Description |
 |--------|-------------|
-| `android/` | Flutter app — builds for Android TV (APK) and Tizen (TPK) |
+| `my-hotel/` | Android TV launcher app (Kotlin + Jetpack Compose) |
 | `backend/` | Node.js + Fastify + Prisma REST/WebSocket API |
-| `tizen/` | Legacy HTML5 Tizen web app (superseded by Flutter) |
+| `admin/` | Next.js admin panel |
+| `hotel-menu/` | Next.js in-room food menu (guest / POS / admin) |
 
 ## Quick start
 
@@ -23,14 +24,9 @@ npx prisma migrate dev --name init
 npm run dev
 ```
 
-### Android TV
+### Android TV (my-hotel)
 ```bash
-cd android
-flutter run
-```
-
-### Tizen
-```bash
-cd android
-flutter-tizen run --dart-define=IS_TIZEN=true
+cd my-hotel
+cp app.properties.example app.properties   # fill in secrets
+./gradlew installDebug
 ```

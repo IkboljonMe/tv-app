@@ -52,7 +52,8 @@ All routes are served under the `/api/v1` prefix; `/health` is unprefixed.
 ```
 backend/
 ├── prisma/
-│   └── schema.prisma          # Hotel, Room, RoomGuest, HotelService, HotelContent, WeatherCache
+│   └── schema.prisma          # TV: Hotel, Room, RoomGuest, HotelService, HotelContent, WeatherCache
+│                              # Menu: MenuHotel, MenuRoom, Category, Product, Order, OrderItem, MenuGuest
 ├── src/
 │   ├── index.ts               # bootstrap: register plugins + routes, /health, PORT/HOST
 │   ├── plugins/
@@ -114,6 +115,31 @@ backend/
 | GET/POST/PUT/DELETE | `/admin/services` | Service CRUD (broadcasts `REFRESH_CONFIG`) |
 | GET/POST/PUT | `/admin/content` | Content CRUD |
 | POST | `/admin/media/presign` | S3 presigned upload URL (returns upload + public URL) |
+
+### In-room dining (Hotel Menu) — shared by `hotel-menu/`, `my-hotel` TV, `kitchen-pos`
+
+The backend also owns the in-room dining data (models `MenuHotel`, `MenuRoom`,
+`Category`, `Product`, `Recommendation`, `Order`, `OrderItem`, `MenuGuest`,
+mapped to `menu_*` tables). Two route groups serve it:
+
+**REST (`src/routes/menuApi.ts`)** — clean endpoints for the TV app, envelope
+`{ data, code, message }`:
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/menu/hotels` | Bookable hotels (onboarding list) |
+| GET | `/menu/categories` | Menu categories (with i18n) |
+| GET | `/menu/products?categoryId&availableOnly` | Menu products |
+| POST | `/menu/orders` | Place an order `{hotelSlug, roomNumber, items[]}` (room upserted) |
+| GET | `/menu/guest?hotelSlug&roomNumber` | Active checked-in guest (TV welcome) |
+| POST | `/menu/guest` | Check a guest in `{hotelSlug, roomNumber, fullName, days}` |
+
+**Data bridge (`src/routes/menuData.ts`)** — generic Prisma-over-HTTP used by the
+`hotel-menu/` Next.js app instead of a local DB:
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| POST | `/menu/data/:model/:op` | Runs `prisma[model][op](body)` for the menu models (allowlisted; optional `x-internal-key`) |
 
 ### Webhooks
 
