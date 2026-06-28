@@ -7,6 +7,7 @@ import multipart from '@fastify/multipart';
 
 import { prismaPlugin } from './plugins/prisma';
 import { redisPlugin } from './plugins/redis';
+import { mediaPlugin } from './plugins/media';
 import { roomRoutes } from './routes/room';
 import { webhookRoutes } from './routes/webhooks';
 import { adminRoutes } from './routes/admin';
@@ -40,6 +41,7 @@ async function bootstrap() {
   await server.register(websocket);
   await server.register(prismaPlugin);
   await server.register(redisPlugin);
+  await server.register(mediaPlugin);
 
   await server.register(roomRoutes,    { prefix: '/api/v1' });
   await server.register(webhookRoutes, { prefix: '/api/v1' });

@@ -106,15 +106,27 @@ export const api = {
     }).then((r) => r.data),
 
   /* ── Media ── */
-  presignUpload: (filename: string, contentType: string) =>
-    req<{ uploadUrl: string; publicUrl: string }>('/admin/media/presign', {
-      method: 'POST',
-      body: JSON.stringify({ filename, contentType }),
-    }),
-
   uploadFile: async (file: File): Promise<string> => {
-    const { uploadUrl, publicUrl } = await api.presignUpload(file.name, file.type);
-    await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+    const token = getToken();
+    const form = new FormData();
+    form.append('file', file);
+
+    const res = await fetch(`${BASE}/api/v1/admin/media/upload`, {
+      method:  'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body:    form, // browser sets multipart/form-data boundary automatically
+    });
+
+    if (res.status === 401) {
+      clearToken();
+      window.location.href = '/login';
+      throw new Error('Session expired');
+    }
+    if (!res.ok) {
+      throw new Error((await res.text().catch(() => '')) || `Upload failed (${res.status})`);
+    }
+
+    const { publicUrl } = (await res.json()) as { publicUrl: string };
     return publicUrl;
   },
 };

@@ -1,32 +1,17 @@
 /* Admin API — JWT-protected routes for hotel staff */
 import { randomBytes } from 'crypto';
+import { createWriteStream } from 'fs';
+import { pipeline } from 'stream/promises';
+import path from 'path';
 import bcrypt from 'bcryptjs';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { pushToRoom, broadcastToHotel } from '../services/pushService';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { MEDIA_DIR } from '../plugins/media';
 
 /* ── Auth middleware ── */
 async function requireAdmin(req: FastifyRequest): Promise<void> {
   await req.jwtVerify();
-}
-
-/* ── S3 client (lazy) ── */
-let _s3: S3Client | null = null;
-function getS3(): S3Client {
-  if (!_s3) {
-    _s3 = new S3Client({
-      endpoint:  process.env.S3_ENDPOINT,
-      region:    process.env.S3_REGION || 'us-east-1',
-      credentials: {
-        accessKeyId:     process.env.S3_ACCESS_KEY!,
-        secretAccessKey: process.env.S3_SECRET_KEY!,
-      },
-      forcePathStyle: true,
-    });
-  }
-  return _s3;
 }
 
 export async function adminRoutes(server: FastifyInstance) {
@@ -178,20 +163,30 @@ export async function adminRoutes(server: FastifyInstance) {
     },
   );
 
-  /* ── POST /admin/media/presign ──────────────────────────────────── */
-  server.post<{ Body: { filename: string; contentType: string } }>(
-    '/admin/media/presign',
+  /* ── POST /admin/media/upload ───────────────────────────────────── */
+  /* Multipart upload straight to the media volume; returns the public URL. */
+  server.post(
+    '/admin/media/upload',
     { preHandler: requireAdmin },
-    async (req) => {
-      const key  = `uploads/${randomBytes(16).toString('hex')}-${req.body.filename}`;
-      const cmd  = new PutObjectCommand({
-        Bucket:      process.env.S3_BUCKET,
-        Key:         key,
-        ContentType: req.body.contentType,
-      });
-      const url = await getSignedUrl(getS3(), cmd, { expiresIn: 3600 });
-      const publicUrl = `${process.env.S3_ENDPOINT}/${process.env.S3_BUCKET}/${key}`;
-      return { uploadUrl: url, publicUrl };
+    async (req, reply) => {
+      const data = await req.file();
+      if (!data) return reply.code(400).send({ error: 'No file uploaded' });
+
+      const safeName = data.filename.replace(/[^\w.\-]+/g, '_');
+      const key      = `${randomBytes(16).toString('hex')}-${safeName}`;
+
+      await pipeline(data.file, createWriteStream(path.join(MEDIA_DIR, key)));
+
+      // @fastify/multipart flags truncation when the size limit (50 MB) is hit.
+      if (data.file.truncated) {
+        return reply.code(413).send({ error: 'File too large' });
+      }
+
+      // PUBLIC_BASE_URL is the backend's public origin (e.g. https://api.yourhotel.com).
+      // If unset, a relative /media/<key> URL is returned (same origin as the API).
+      const base      = (process.env.PUBLIC_BASE_URL || '').replace(/\/$/, '');
+      const publicUrl = `${base}/media/${key}`;
+      return { publicUrl };
     },
   );
 
